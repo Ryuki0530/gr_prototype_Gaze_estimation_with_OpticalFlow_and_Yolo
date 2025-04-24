@@ -1,11 +1,22 @@
+# yolo_viwer.py などにある既存関数を書き換え
 import cv2
 
-def viewYoloResult(frame,model,detection):
-    box = detection.xyxy[0].tolist()
-    cls = int(detection.cls[0].item())
-    conf = float(detection.conf[0].item())
-    label = f"{model.names[cls]}: {conf:.2f}"
+def viewYoloResult(frame, model, det, color=(0, 0, 255), thickness=2):
+    """
+    1 つの検出結果をフレームに描画するユーティリティ
+    --------------------------------------------------
+    frame   : 描画対象の画像
+    model   : YOLO モデル（クラス名取得用）
+    det     : Ultralytics detection (Boxes 要素を 1 個渡す)
+    color   : (B, G, R) のタプル   ← ★ 追加
+    thickness : 枠線の太さ
+    """
+    x1, y1, x2, y2 = map(int, det.xyxy[0])       # 座標
+    cls_id = int(det.cls[0])                     # クラス ID
+    conf   = float(det.conf[0])                  # 信頼度
 
-    color = (0,255,0)
-    cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), color, 2)
-    cv2.putText(frame, label, (int(box[0]), int(box[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+
+    label = f"{model.names[cls_id]} {conf:.2f}"
+    cv2.putText(frame, label, (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
