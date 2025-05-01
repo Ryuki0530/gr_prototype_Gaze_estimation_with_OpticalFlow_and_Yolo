@@ -15,4 +15,7 @@ def select_target(detections, dx, dy, center, prev_idx=None):
     for idx ,det in enumerate(detections):
         x1,y1,x2,y2 = det.xyxy[0].cpu().numpy()
     
-    
+        obj_cx, obj_cy = (x1 + x2) / 2, (y1 + y2) /2
+
+        dist_center = math.hypot(obj_cx - center[0], obj_cy - center[1])
+        

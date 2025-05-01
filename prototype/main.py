@@ -25,19 +25,26 @@ def select_target(detections, dx, dy, center, prev_idx=None):
         return None
 
     # ===== 前計算 =====
-    cand = []                 # (idx, obj_cx, obj_cy, dist)
+    cand = []  # 候補リスト: (idx, obj_cx, obj_cy, dist_center) を格納する
     for idx, det in enumerate(detections):
+        # 各検出結果のバウンディングボックス座標を取得
         x1, y1, x2, y2 = det.xyxy[0].cpu().numpy()
-        obj_cx, obj_cy = (x1+x2)/2, (y1+y2)/2
-        dist_center    = math.hypot(obj_cx-center[0], obj_cy-center[1])
+        
+        # バウンディングボックスの中心座標を計算
+        obj_cx, obj_cy = (x1 + x2) / 2, (y1 + y2) / 2
+        
+        # 中心座標から画面中央までの距離を計算
+        dist_center = math.hypot(obj_cx - center[0], obj_cy - center[1])
+        
+        # 候補リストに (インデックス, 中心座標, 中心からの距離) を追加
         cand.append((idx, obj_cx, obj_cy, dist_center))
 
     # --- 中央に最も近い ---
     baseline_idx = min(cand, key=lambda c: c[3])[0]
 
-    # --- 速さが閾値未満 → 乗り換えなし ---
-    if math.hypot(dx, dy) < FLOW_THRESH:
-        return baseline_idx
+    # --- 速さが閾値未満 → 前回の対象を維持 ---
+    if math.hypot(dx, dy) < FLOW_THRESH and prev_idx is not None:
+        return prev_idx
 
     # --- フロー方向にある物体を探す ---
     best_idx, best_angle = baseline_idx, ANGLE_THRESH
@@ -86,6 +93,8 @@ def main():
         line_dy, = ax.plot([],[],label = "dy")
         ax.legend()
 
+    prev_idx = None
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -105,7 +114,8 @@ def main():
             detections  = yoloResults[0].boxes
 
             # 注視対象は「detections の何番目か」で返す
-            target_idx = select_target(detections, dx, dy, center)
+            target_idx = select_target(detections, dx, dy, center, prev_idx)
+            prev_idx = target_idx
 
             # 枠を描画：target_idx だけ緑、その他は赤
             for idx, det in enumerate(detections):
