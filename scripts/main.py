@@ -86,6 +86,11 @@ def main():
         line_dy, = ax.plot([],[],label = "dy")
         ax.legend()
 
+
+    # メインループ準備
+    prev_idx = None
+
+    # メインループ
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -105,7 +110,8 @@ def main():
             detections  = yoloResults[0].boxes
 
             # 注視対象は「detections の何番目か」で返す
-            target_idx = select_target(detections, dx, dy, center)
+            target_idx = select_target(detections, dx, dy, center, prev_idx)
+            prev_idx = target_idx
 
             # 枠を描画：target_idx だけ緑、その他は赤
             for idx, det in enumerate(detections):
