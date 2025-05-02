@@ -2,11 +2,10 @@ import cv2
 import numpy
 import math
 
-FLOW_THRESH = 5.0        # 視線移動とみなす速度[pixel/frame]
 # ANGLE_THRESH = math.radians(45)
 
 
-def select_target(detections, dx, dy, center, prev_idx=None):
+def select_target(detections, dx, dy, center, prev_idx=None ,FLOW_THRESH = 5.0):
 
     if len(detections) == 0:
         return None
