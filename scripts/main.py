@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from yolo_viwer import viewYoloResult
 import math
+from target_selecter import select_target
 
 YOLO_MODEL = "yolov8n"
 YOLO_ACTIVATE = True
@@ -16,43 +17,6 @@ OPTICAL_FLOW_PLOT = True
 CAM_ID = 1
 FLOW_THRESH = 5.0        # 視線移動とみなす速度[pixel/frame]
 ANGLE_THRESH = math.radians(45)
-
-# ---------------------------------------------------------------
-# 1. select_target で返すのは Boxes オブジェクトではなく “index”
-# ---------------------------------------------------------------
-def select_target(detections, dx, dy, center, prev_idx=None):
-    if len(detections) == 0:
-        return None
-
-    # ===== 前計算 =====
-    cand = []                 # (idx, obj_cx, obj_cy, dist)
-    for idx, det in enumerate(detections):
-        x1, y1, x2, y2 = det.xyxy[0].cpu().numpy()
-        obj_cx, obj_cy = (x1+x2)/2, (y1+y2)/2
-        dist_center    = math.hypot(obj_cx-center[0], obj_cy-center[1])
-        cand.append((idx, obj_cx, obj_cy, dist_center))
-
-    # --- 中央に最も近い ---
-    baseline_idx = min(cand, key=lambda c: c[3])[0]
-
-    # --- 速さが閾値未満 → 乗り換えなし ---
-    if math.hypot(dx, dy) < FLOW_THRESH:
-        return baseline_idx
-
-    # --- フロー方向にある物体を探す ---
-    best_idx, best_angle = baseline_idx, ANGLE_THRESH
-    for idx, obj_cx, obj_cy, _ in cand:
-        vec_obj  = (obj_cx-center[0], obj_cy-center[1])
-        norm_obj = math.hypot(*vec_obj)
-        if norm_obj == 0:
-            return idx
-        cosang = (dx*vec_obj[0] + dy*vec_obj[1]) / (math.hypot(dx,dy)*norm_obj)
-        angle  = math.acos(max(min(cosang,1.0), -1.0))
-        if angle < best_angle:
-            best_idx, best_angle = idx, angle
-
-    return best_idx
-
     
 def main():
     
