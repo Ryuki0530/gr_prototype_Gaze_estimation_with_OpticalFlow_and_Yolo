@@ -3,7 +3,7 @@ import numpy
 import torch
 from ultralytics import YOLO
 from conn_cam import connCam
-from calc_optical_flow import calcOpticalFlow
+from calc_optical_flow import calcOpticalFlowAvg
 import numpy as np
 import matplotlib.pyplot as plt
 from yolo_viwer import viewYoloResult
@@ -11,6 +11,10 @@ import math
 from target_selecter import select_target
 
 YOLO_MODEL = "yolov8n"
+
+MODE = 1 
+# 0:光フロー ＋ YOLO
+# 1:グリッド分割 ＋ 光フロー
 YOLO_ACTIVATE = True
 OPTICAL_FLOW_ACTIVATE = True
 OPTICAL_FLOW_PLOT = True
@@ -65,7 +69,7 @@ def main():
 
         #光フロー計算
         if OPTICAL_FLOW_ACTIVATE:
-            dx,dy = calcOpticalFlow(prev_frame,frame,plot_graph= True)
+            dx,dy = calcOpticalFlowAvg(prev_frame,frame,plot_graph= True)
             cv2.putText(frame,f"dx: {dx:.2f}\ndy: {dy:.2f}",(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1.0,(0,0,0),2)
 
         # ── YOLO 推論と注視対象の描画 ──────────────────────
