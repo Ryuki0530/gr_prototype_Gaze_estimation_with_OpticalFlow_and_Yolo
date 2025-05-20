@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def calcOpticalFlow(prev_frame,curr_frame,plot_graph = True):
+def calcOpticalFlowAvg(prev_frame,curr_frame,plot_graph = True):
     #グレイスケール変換
     prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
     curr_gray = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
@@ -24,3 +24,33 @@ def calcOpticalFlow(prev_frame,curr_frame,plot_graph = True):
 
     return dx,dy
 
+def gridOpticalFlow(prev_gray_frame, curr_frame,grid_size = 20):
+
+    curr_gray_frame = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
+    flow = cv2.calcOpticalFlowFarneback(
+        prev_gray_frame,
+        curr_gray_frame,
+        None,
+        0.5,
+        3,
+        15,
+        3,5,
+        1.2,0
+    )
+
+    h,w = curr_gray_frame.shape
+
+    for y in range(0,h,grid_size):
+        for x in range(0,w,grid_size):
+            fx, fy = flow[y:y+grid_size, x:x+grid_size].mean(axis=(0, 1))
+            
+            end_x = int(x + grid_size / 2 + fx)
+            end_y = int(y + grid_size / 2 + fy)
+            cv2.arrowedLine(
+                curr_frame,
+                (x + grid_size //2, y +grid_size //2),
+                (end_x , end_y),
+                (0,255,0),
+                1,
+                tipLength = 0.3)
+    return curr_gray_frame, curr_frame
