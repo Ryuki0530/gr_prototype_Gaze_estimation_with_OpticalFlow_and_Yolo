@@ -28,14 +28,14 @@ def process_frame(prev_gray, frame, grid_size):
     return gray, frame
 
 # カメラの初期化
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 # 光フロー計算用の初期フレーム
 ret, prev_frame = cap.read()
 prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
 
 # グリッドサイズ
-grid_size = 20
+grid_size = 75
 
 while True:
     # 現在のフレームを取得
