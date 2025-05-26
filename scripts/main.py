@@ -27,7 +27,7 @@ GRIDSIZE = 100
 
 # プロパティ
 CAM_ID = 1
-MODE = 1 
+MODE = 0 
     # 0:光フロー ＋ YOLO
     # 1:グリッド分割 ＋ 光フロー
 

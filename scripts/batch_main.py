@@ -28,7 +28,7 @@ GRIDSIZE = 100
 
 # プロパティ
 CAM_ID = 1
-MODE = 1 
+MODE = 0 
     # 0:光フロー ＋ YOLO
     # 1:グリッド分割 ＋ 光フロー
 
@@ -66,33 +66,48 @@ def main():
         sys.exit(1)
 
     #  動画情報取得
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    
+
+
     frame_count = 0
 
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+    # 出力設定
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path,fourcc,fps,(width,height))
+    if not out.isOpened():
+        print("Failed to create output file.")
+        cap.release()
+        sys.exit(1)
+
+    ret, prev_frame = cap.read()
+    if not ret :
+        print("Failed to read the first frame from the video.")
+        cap.release()
+        out.release()
+        sys.exit(1)
 
     model = YOLO(YOLO_MODEL)
 
-    ret, prev_frame = cap.read()
-    if not ret:
-        print("Camera Error")
-        return
-    
 
-    #光フローグラフの初期化
-    if (OPTICAL_FLOW_AVG_PLOT == True):
-        plt.ion()#インタラクティブモード有効化
-        fig, ax = plt.subplots()
-        ax.set_title("OpticalFlowAVG (dx, dy)")
-        ax.set_xlabel("Frame")
-        ax.set_ylabel("OpticalFlowAVG(pixels)")
-        x_data = []
-        dx_data = []
-        dy_data = []
-        line_dx, = ax.plot([],[],label = "dx")
-        line_dy, = ax.plot([],[],label = "dy")
-        ax.legend()
+    # #光フローグラフの初期化
+    # if (OPTICAL_FLOW_AVG_PLOT == True):
+    #     plt.ion()#インタラクティブモード有効化
+    #     fig, ax = plt.subplots()
+    #     ax.set_title("OpticalFlowAVG (dx, dy)")
+    #     ax.set_xlabel("Frame")
+    #     ax.set_ylabel("OpticalFlowAVG(pixels)")
+    #     x_data = []
+    #     dx_data = []
+    #     dy_data = []
+    #     line_dx, = ax.plot([],[],label = "dx")
+    #     line_dy, = ax.plot([],[],label = "dy")
+    #     ax.legend()
 
 
     # メインループ準備
@@ -128,38 +143,35 @@ def main():
                 colour = (0, 255, 0) if idx == target_idx else (0, 0, 255)
                 viewYoloResult(frame, model, det, color=colour)
 
-        #光フローの履歴プロット
-        if OPTICAL_FLOW_AVG_PLOT and OPTICAL_FLOW_AVG_ACTIVATE:
-            x_data.append(frame_count)
-            dx_data.append(dx)
-            dy_data.append(dy)
-
-            line_dx.set_xdata(x_data)
-            line_dx.set_ydata(dx_data)
-            line_dy.set_xdata(x_data)
-            line_dy.set_ydata(dy_data)
-
-            ax.relim()
-            ax.autoscale_view()
-            plt.draw()
-            plt.pause(0.01)
-
+        
         # グリッド分けを用いた方法
         if OPTICAL_FLOW_GRID_ACTIVATE:
             prev_gray, frame = gridOpticalFlow(prev_gray,frame,grid_size= GRID_SIZE)
 
-        #描画
-        cv2.imshow("GR_PROTOTYPE_GAZE_ESTIMATION",frame)
+        # 書き出し
+        # カラーであることを保証
+        if len(frame.shape) == 2 or frame.shape[2] != 3:
+            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
 
-        prev_frame = frame.copy()
-        frame_count += 1
+        # サイズを出力指定に合わせる
+        if frame.shape[1] != width or frame.shape[0] != height:
+            frame = cv2.resize(frame, (width, height))
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        out.write(frame)
+
+
+        # #描画
+        # cv2.imshow("GR_PROTOTYPE_GAZE_ESTIMATION",frame)
+
+        # prev_frame = frame.copy()
+        # frame_count += 1
+
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
     
     cap.release()
-    cv2.destroyAllWindows()
-    
+    out.release()
+    print("Compleated\n")
 
 if __name__ == "__main__":
     main()
