@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from yolo_viwer import viewYoloResult
 import math
 from target_selecter import select_target
+from target_selecter import select_target2
 
 # 各種パラメータ初期化
 YOLO_ACTIVATE = False
@@ -115,6 +116,8 @@ def main():
     if OPTICAL_FLOW_GRID_ACTIVATE:
         prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
 
+    shift_state = None
+
     # メインループ
     while True:
         ret, frame = cap.read()
@@ -135,8 +138,12 @@ def main():
             detections  = yoloResults[0].boxes
 
             # 注視対象は「detections の何番目か」で返す
-            target_idx = select_target(detections, dx, dy, center, prev_idx)
+            # target_idx = select_target(detections, dx, dy, center, prev_idx,FLOW_THRESH=FLOW_THRESH)
+            target_idx,shift_state,shifted_center= select_target2(detections, dx, dy, center, prev_idx,FLOW_THRESH=FLOW_THRESH,shift_state=shift_state)
+            
             prev_idx = target_idx
+
+            cv2.circle(frame, (int(shifted_center[0]), int(shifted_center[1])), radius=3, color=(0, 255, 0), thickness=-1)
 
             # 枠を描画：target_idx だけ緑、その他は赤
             for idx, det in enumerate(detections):
